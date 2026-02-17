@@ -1,0 +1,48 @@
+name: noize_flutter
+description: NOIZE.music prototype
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # --- Core utilities ---
+  http: ^1.2.1
+  shared_preferences: ^2.3.2
+  intl: ^0.20.2
+
+  # --- File handling and uploads ---
+  file_selector: ^1.0.3
+  path: ^1.9.0
+
+  # --- Audio playback ---
+  just_audio: ^0.9.46
+
+  # --- UI enhancements (optional but useful) ---
+  provider: ^6.1.2
+
+  # --- Unicode normalization (for future-proof text comparison) ---
+  unicode: ^0.3.0
+
+  # --- Animations / motion (if you plan UI animations) ---
+  flutter_animate: ^4.5.0
+
+  # --- URL launcher for opening links, email, phone ---
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/logo.png

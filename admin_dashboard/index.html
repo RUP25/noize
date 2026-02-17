@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NOIZE Admin CMS</title>
+  </head>
+  <body>
+    <div id="root">
+      <div style="padding: 20px; background: red; color: white; font-size: 20px;">
+        Loading... If you see this, React hasn't mounted yet.
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Fallback error handler if module fails to load
+      window.addEventListener('error', function(e) {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.includes('Loading...')) {
+          root.innerHTML = `
+            <div style="padding: 40px; background: #1a1f2e; color: #f56565; font-family: monospace;">
+              <h1>Error Loading Application</h1>
+              <p><strong>Error:</strong> ${e.message}</p>
+              <p><strong>File:</strong> ${e.filename}</p>
+              <p><strong>Line:</strong> ${e.lineno}</p>
+              <p><strong>Column:</strong> ${e.colno}</p>
+              <p style="margin-top: 20px; color: #a0aec0;">
+                Check the browser console (F12) for more details.
+              </p>
+              <p style="margin-top: 10px; color: #a0aec0;">
+                Make sure the dev server is running: <code>npm run dev</code>
+              </p>
+            </div>
+          `;
+        }
+      });
+      
+      // Check if React mounted after 3 seconds
+      setTimeout(function() {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.includes('Loading...')) {
+          root.innerHTML = `
+            <div style="padding: 40px; background: #1a1f2e; color: #f56565; font-family: monospace;">
+              <h1>React Failed to Mount</h1>
+              <p>The React application did not mount within 3 seconds.</p>
+              <p style="margin-top: 20px; color: #a0aec0;">
+                Possible causes:
+              </p>
+              <ul style="color: #a0aec0; margin-top: 10px;">
+                <li>JavaScript errors in the console (press F12 to check)</li>
+                <li>Module loading issues</li>
+                <li>Dev server not running or misconfigured</li>
+                <li>Dependencies not installed (run: npm install)</li>
+              </ul>
+              <p style="margin-top: 20px; color: #a0aec0;">
+                Check the browser console (F12) for detailed error messages.
+              </p>
+            </div>
+          `;
+        }
+      }, 3000);
+    </script>
+  </body>
+</html>

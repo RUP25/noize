@@ -1,0 +1,23 @@
+# Cloudflare Worker Configuration for CDN Optimizer
+# Copy this to wrangler.toml and update with your values
+
+name = "cdn-optimizer"
+main = "cdn-optimizer.js"
+compatibility_date = "2024-01-01"
+
+# Your Cloudflare Account ID (find in dashboard URL or run: wrangler whoami)
+account_id = "<your-account-id>"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "noize-dev"  # Your R2 bucket name
+
+# Optional: Add routes for custom domain
+# routes = [
+#   { pattern = "cdn.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
+
+# Optional: Environment variables
+# [vars]
+# CDN_CACHE_TTL = "31536000"

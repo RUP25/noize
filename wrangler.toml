@@ -1,0 +1,5 @@
+
+name = "noize-media-worker"
+main = "workers/noize-media.js"
+compatibility_date = "2025-10-01"
+account_id = "<your_account_id>"
