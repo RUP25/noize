@@ -30,7 +30,7 @@ class UploadService {
     }
   }
 
-  Future<void> pickAndUpload({required String title, String? album, String? coverPhotoUrl}) async {
+  Future<void> pickAndUpload({required String title, String? album, String? coverPhotoUrl, String? lyrics}) async {
     final file = await openFile(
       acceptedTypeGroups: [const XTypeGroup(label: 'audio', extensions: ['mp3', 'm4a', 'wav', 'aac', 'flac'])],
     );
@@ -81,6 +81,7 @@ class UploadService {
           'r2_key': key,
           'content_type': contentType,
           if (coverPhotoUrl != null) 'cover_photo_url': coverPhotoUrl,
+          if (lyrics != null && lyrics.trim().isNotEmpty) 'lyrics': lyrics.trim(),
         }),
       ).timeout(const Duration(seconds: 10));
 

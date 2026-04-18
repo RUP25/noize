@@ -7,6 +7,7 @@ import FlaggedCenter from './pages/FlaggedCenter'
 import UserManagement from './pages/UserManagement'
 import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
+import MerchAndEvents from './pages/MerchAndEvents'
 import Layout from './components/Layout'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
@@ -57,6 +58,7 @@ function AppRoutes() {
           <Route path="flagged" element={<FlaggedCenter />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="merch" element={<MerchAndEvents />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

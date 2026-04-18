@@ -542,11 +542,11 @@ abstract class AppLocalizations {
   /// **'Artist'**
   String get artist;
 
-  /// No description provided for @influencer.
+  /// No description provided for @creator.
   ///
   /// In en, this message translates to:
-  /// **'Influencer'**
-  String get influencer;
+  /// **'Creator'**
+  String get creator;
 
   /// No description provided for @browseAsGuest.
   ///
@@ -1079,20 +1079,32 @@ abstract class AppLocalizations {
   /// No description provided for @freeUserUpgradeReminderBannerHeader.
   ///
   /// In en, this message translates to:
-  /// **'Want to earn while you listen?'**
+  /// **'Ready for NOIZE REP?'**
   String get freeUserUpgradeReminderBannerHeader;
 
   /// No description provided for @freeUserUpgradeReminderBannerBody.
   ///
   /// In en, this message translates to:
-  /// **'Upgrade to NOIZE REP and start earning by supporting music you love.'**
+  /// **'₹399/mo · Referrals, task earning, token dashboard. Reward-pool payouts (not fixed). Next step after NOIZE Listen.'**
   String get freeUserUpgradeReminderBannerBody;
 
   /// No description provided for @freeUserUpgradeReminderBannerCta.
   ///
   /// In en, this message translates to:
-  /// **'UPGRADE NOW'**
+  /// **'UPGRADE TO REP'**
   String get freeUserUpgradeReminderBannerCta;
+
+  /// No description provided for @repSubscriptionPitchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Next after NOIZE Listen: growth + referrals. Referral system, task-based earning, token dashboard. Daily 50 tokens · 800–1200/month. Earnings from the reward pool, not a fixed rate.'**
+  String get repSubscriptionPitchBody;
+
+  /// No description provided for @noizeRepEngagementLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Engagement engine · Controlled growth · Token caps apply'**
+  String get noizeRepEngagementLabel;
 
   /// No description provided for @premiumFeatureLockScreenHeader.
   ///
@@ -1145,20 +1157,26 @@ abstract class AppLocalizations {
   /// No description provided for @listenerOnlySubscriptionPitchHeader.
   ///
   /// In en, this message translates to:
-  /// **'Love listening? Listen more with NOIZE Listen.'**
+  /// **'NOIZE Listen — ₹149/month'**
   String get listenerOnlySubscriptionPitchHeader;
 
   /// No description provided for @listenerOnlySubscriptionPitchBody.
   ///
   /// In en, this message translates to:
-  /// **'Ad-free. Unlimited playlists. Offline downloads.'**
+  /// **'Ad-free, unlimited skips, offline downloads, full catalog. Core revenue plan — your streams drive distribution to artists.'**
   String get listenerOnlySubscriptionPitchBody;
 
   /// No description provided for @listenerOnlySubscriptionPitchCta.
   ///
   /// In en, this message translates to:
-  /// **'GO PREMIUM'**
+  /// **'SUBSCRIBE'**
   String get listenerOnlySubscriptionPitchCta;
+
+  /// No description provided for @noizeListenCoreRevenueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Core subscription · Main revenue tier · Streams fund payouts'**
+  String get noizeListenCoreRevenueLabel;
 
   /// No description provided for @downgradeConfirmationHeader.
   ///
@@ -1283,8 +1301,20 @@ abstract class AppLocalizations {
   /// No description provided for @listenWithAds.
   ///
   /// In en, this message translates to:
-  /// **'• Listen with ads and limited skips\n• Create private playlists (cannot share)\n• Cannot download or earn rewards'**
+  /// **'• Limited streaming with ads and limited skips\n• No offline downloads\n• No tokens, tipping, or monetisation — full access on NOIZE Listen'**
   String get listenWithAds;
+
+  /// No description provided for @guestSkipLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip limit reached. Upgrade to NOIZE Listen for unlimited skips.'**
+  String get guestSkipLimitReached;
+
+  /// No description provided for @noizeGuestExperienceNoMonetisation.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets, merch, and tipping are available with NOIZE Listen.'**
+  String get noizeGuestExperienceNoMonetisation;
 
   /// No description provided for @loginRequiredToPlay.
   ///
@@ -1333,6 +1363,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to delete'**
   String get deleteFailed;
+
+  /// No description provided for @noizeDonationCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NOIZE Donation'**
+  String get noizeDonationCardTitle;
+
+  /// No description provided for @noizeDonationCardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Social impact · Discover NGOs — we connect you to official sites. No payments through NOIZE.'**
+  String get noizeDonationCardSubtitle;
+
+  /// No description provided for @noizeDonationScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NOIZE Donation'**
+  String get noizeDonationScreenTitle;
+
+  /// No description provided for @noizeDonationPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'Purpose: Social impact'**
+  String get noizeDonationPurpose;
+
+  /// No description provided for @noizeDonationFlowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover NGOs below and continue on each organisation\'s official website. NOIZE does not process donations or take a fee — brand credibility only.'**
+  String get noizeDonationFlowDescription;
+
+  /// No description provided for @ngoDiscoveryHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'NGO discovery'**
+  String get ngoDiscoveryHeading;
+
+  /// No description provided for @ngoVisitOfficialSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Open official site'**
+  String get ngoVisitOfficialSite;
+
+  /// No description provided for @noizeDonationNoRevenueDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'NOIZE does not earn revenue from this section. Always verify the site URL before donating.'**
+  String get noizeDonationNoRevenueDisclaimer;
+
+  /// No description provided for @linkCouldNotOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link'**
+  String get linkCouldNotOpen;
+
+  /// No description provided for @noizeDonationCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore NGOs'**
+  String get noizeDonationCta;
 }
 
 class _AppLocalizationsDelegate

@@ -25,30 +25,21 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 40),
                 Image.asset(
                   'assets/logo.png',
-                  height: 120,
+                  height: 220,
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      height: 120,
-                      width: 120,
+                      height: 220,
+                      width: 220,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade800,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.music_note, size: 60, color: accent),
+                      child: Icon(Icons.music_note, size: 80, color: accent),
                     );
                   },
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'NOIZE.music',
-                  style: TextStyle(
-                    fontSize: 32,
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 32),
                 Text(
                   'Listen. Create. Earn.',
                   style: TextStyle(

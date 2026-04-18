@@ -8,6 +8,7 @@ import {
   Settings,
   LogOut,
   Flag,
+  ShoppingBag,
 } from 'lucide-react'
 
 export default function Layout() {
@@ -20,6 +21,7 @@ export default function Layout() {
     { path: '/flagged', label: 'Flagged Center', icon: Flag },
     { path: '/users', label: 'User Management', icon: Users },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/merch', label: 'Merch & Events', icon: ShoppingBag },
     { path: '/settings', label: 'Settings', icon: Settings },
   ]
 

@@ -7,6 +7,10 @@ from .artist import router as artist_router
 from .user import router as user_router
 from .notifications import router as notifications_router
 from .admin import router as admin_router
+from .config import router as config_router
+from .recommendations import router as recommendations_router
+from .charts import router as charts_router
+from .experience import router as experience_router
 from .rate_limit import RateLimitMiddleware
 from .redis_client import get_redis, close_redis
 
@@ -20,6 +24,69 @@ async def lifespan(app: FastAPI):
         print("✅ Redis connected")
     except Exception as e:
         print(f"⚠️  Redis connection failed (will use fallback): {e}")
+
+    # Best-effort "proto migration" for new nullable columns (keeps dev running without Alembic).
+    try:
+        from sqlalchemy import text
+        from .db import engine
+        async with engine.begin() as conn:
+            await conn.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS ticket_link TEXT"))
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS listen_events (
+                        id SERIAL PRIMARY KEY,
+                        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        song_id INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+                        listen_ms INTEGER,
+                        played_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                    )
+                    """
+                )
+            )
+            await conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_listen_events_song_played ON listen_events (song_id, played_at)"
+                )
+            )
+            await conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_listen_events_user_played ON listen_events (user_id, played_at DESC)"
+                )
+            )
+            await conn.execute(text("ALTER TABLE songs ADD COLUMN IF NOT EXISTS genre VARCHAR(80)"))
+            await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_songs_genre ON songs (genre)"))
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN IF NOT EXISTS experience_preferences JSONB")
+            )
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN IF NOT EXISTS artist_plus BOOLEAN DEFAULT FALSE")
+            )
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN IF NOT EXISTS artist_plus_monthly_paise INTEGER")
+            )
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS dislikes (
+                        id SERIAL PRIMARY KEY,
+                        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        song_id INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                        UNIQUE(user_id, song_id)
+                    )
+                    """
+                )
+            )
+            await conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_dislikes_user_id ON dislikes (user_id)")
+            )
+            await conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_dislikes_song_id ON dislikes (song_id)")
+            )
+        print("✅ DB migration ensured: events.ticket_link, listen_events, dislikes, songs.genre, users.experience_preferences")
+    except Exception as e:
+        print(f"⚠️  DB migration skipped/failed: {e}")
     
     yield
     
@@ -53,6 +120,10 @@ app.include_router(artist_router)
 app.include_router(user_router)
 app.include_router(notifications_router)
 app.include_router(admin_router)
+app.include_router(config_router)
+app.include_router(recommendations_router)
+app.include_router(charts_router)
+app.include_router(experience_router)
 
 @app.get("/")
 async def root():

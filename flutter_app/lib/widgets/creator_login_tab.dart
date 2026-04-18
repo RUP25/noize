@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../utils/toast_util.dart';
-import '../screens/influencer_signup_screen.dart';
-import '../screens/influencer_home_screen.dart';
+import '../screens/creator_signup_screen.dart';
+import '../screens/creator_home_screen.dart';
 
-class InfluencerLoginTab extends StatefulWidget {
-  const InfluencerLoginTab({super.key});
+class CreatorLoginTab extends StatefulWidget {
+  const CreatorLoginTab({super.key});
 
   @override
-  State<InfluencerLoginTab> createState() => _InfluencerLoginTabState();
+  State<CreatorLoginTab> createState() => _CreatorLoginTabState();
 }
 
-class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
+class _CreatorLoginTabState extends State<CreatorLoginTab> {
   final _contactController = TextEditingController();
   final _otpController = TextEditingController();
   final _auth = AuthService();
@@ -48,7 +48,7 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
   Future<void> _verifyOtp() async {
     final contact = _contactController.text.trim();
     final otp = _otpController.text.trim();
-    
+
     if (contact.isEmpty || otp.isEmpty) {
       showToast('Please enter contact and OTP');
       return;
@@ -58,18 +58,16 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
     try {
       await _auth.verifyOtp(contact: contact, otp: otp);
       showToast('Login successful!');
-      
-      // Navigate to influencer signup/profile screen
+
       if (mounted) {
         final result = await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const InfluencerSignupScreen()),
+          MaterialPageRoute(builder: (_) => const CreatorSignupScreen()),
         );
         if (result == true) {
-          // Profile created, navigate to influencer home
           if (mounted) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const InfluencerHomeScreen()),
+              MaterialPageRoute(builder: (_) => const CreatorHomeScreen()),
             );
           }
         }
@@ -84,13 +82,12 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF78E08F);
-    
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Info Card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -100,10 +97,10 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
             ),
             child: Column(
               children: [
-                Icon(Icons.person_outline, size: 48, color: accent),
+                Icon(Icons.auto_awesome, size: 48, color: accent),
                 const SizedBox(height: 12),
                 const Text(
-                  'NOIZE Influencer',
+                  'NOIZE Creator',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -112,7 +109,7 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Curate playlists, share music,\nearn rewards',
+                  'Curate playlists, promote music,\nearn as a music influencer',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -123,13 +120,12 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
             ),
           ),
           const SizedBox(height: 32),
-          
           if (!_otpSent) ...[
             TextField(
               controller: _contactController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: 'Email or Phone',
+                labelText: 'Email or phone',
                 labelStyle: const TextStyle(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -141,7 +137,7 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: accent, width: 2),
+                  borderSide: const BorderSide(color: accent, width: 2),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -181,7 +177,7 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: accent, width: 2),
+                  borderSide: const BorderSide(color: accent, width: 2),
                 ),
               ),
               keyboardType: TextInputType.number,
@@ -201,7 +197,7 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
                 ),
                 child: _loading
                     ? const CircularProgressIndicator(color: Colors.black)
-                    : const Text('Verify & Create Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text('Verify & create profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 8),
@@ -215,4 +211,3 @@ class _InfluencerLoginTabState extends State<InfluencerLoginTab> {
     );
   }
 }
-

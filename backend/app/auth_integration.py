@@ -1,9 +1,24 @@
+from typing import Optional
+
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from .db import get_db, AsyncSessionLocal
 from .models import User
 from .redis_client import is_token_blacklisted, is_session_valid
+
+async def get_current_user_optional(
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    """
+    Same validation as get_current_user when a Bearer token is present.
+    Returns None when the Authorization header is missing (anonymous / NOIZE Guest entry funnel).
+    """
+    if authorization is None or not authorization.strip():
+        return None
+    return await get_current_user(authorization=authorization, db=db)
+
 
 async def get_current_user(authorization: str = Header(None), db: AsyncSession = Depends(get_db)) -> User:
     if not authorization:

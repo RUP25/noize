@@ -34,6 +34,8 @@ services:
     build: ./backend
     env_file:
       - ./backend/.env.example
+    environment:
+      REDIS_HOST: redis
     depends_on:
       db:
         condition: service_healthy

@@ -228,7 +228,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get artist => 'Artista';
 
   @override
-  String get influencer => 'Influencer';
+  String get creator => 'Creador';
 
   @override
   String get browseAsGuest => 'Navegar como invitado';
@@ -499,15 +499,22 @@ class AppLocalizationsEs extends AppLocalizations {
       'Escucha y gana recompensas,\nverificación KYC, bonos de referidos';
 
   @override
-  String get freeUserUpgradeReminderBannerHeader =>
-      'Want to earn while you listen?';
+  String get freeUserUpgradeReminderBannerHeader => '¿Listo para NOIZE REP?';
 
   @override
   String get freeUserUpgradeReminderBannerBody =>
-      'Upgrade to NOIZE REP and start earning by supporting music you love.';
+      '₹399/mes · Referidos, tareas, panel de tokens. Pagos del pool de recompensas (no fijos). Siguiente paso tras NOIZE Listen.';
 
   @override
-  String get freeUserUpgradeReminderBannerCta => 'UPGRADE NOW';
+  String get freeUserUpgradeReminderBannerCta => 'PASAR A REP';
+
+  @override
+  String get repSubscriptionPitchBody =>
+      'Después de NOIZE Listen: crecimiento + referidos. Sistema de referidos, tareas, panel de tokens. 50 tokens/día · 800–1200/mes. Ganancias del pool de recompensas, no fijas.';
+
+  @override
+  String get noizeRepEngagementLabel =>
+      'Motor de engagement · Crecimiento controlado · Límites de tokens';
 
   @override
   String get premiumFeatureLockScreenHeader =>
@@ -538,15 +545,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get artistPromotionEngagementCta => 'SUPPORT & EARN';
 
   @override
-  String get listenerOnlySubscriptionPitchHeader =>
-      'Love listening? Listen more with NOIZE Listen.';
+  String get listenerOnlySubscriptionPitchHeader => 'NOIZE Listen — ₹149/mes';
 
   @override
   String get listenerOnlySubscriptionPitchBody =>
-      'Ad-free. Unlimited playlists. Offline downloads.';
+      'Sin anuncios, saltos ilimitados, descargas sin conexión, catálogo completo. Plan principal de ingresos: tus reproducciones impulsan los pagos a artistas.';
 
   @override
-  String get listenerOnlySubscriptionPitchCta => 'GO PREMIUM';
+  String get listenerOnlySubscriptionPitchCta => 'SUSCRIBIRSE';
+
+  @override
+  String get noizeListenCoreRevenueLabel =>
+      'Suscripción principal · Ingresos clave · Los streams financian pagos';
 
   @override
   String get downgradeConfirmationHeader =>
@@ -613,7 +623,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get listenWithAds =>
-      '• Escucha con anuncios y saltos limitados\n• Crear listas privadas (no se pueden compartir)\n• No se puede descargar o ganar recompensas';
+      '• Streaming limitado con anuncios y saltos limitados\n• Sin descargas sin conexión\n• Sin tokens, propinas ni monetización — acceso completo con NOIZE Listen';
+
+  @override
+  String get guestSkipLimitReached =>
+      'Límite de saltos alcanzado. Actualiza a NOIZE Listen para saltos ilimitados.';
+
+  @override
+  String get noizeGuestExperienceNoMonetisation =>
+      'Entradas, merchandising y propinas están disponibles con NOIZE Listen.';
 
   @override
   String get loginRequiredToPlay =>
@@ -639,4 +657,37 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get deleteFailed => 'Error al eliminar';
+
+  @override
+  String get noizeDonationCardTitle => 'Donación NOIZE';
+
+  @override
+  String get noizeDonationCardSubtitle =>
+      'Impacto social · Descubre ONG — enlaces a sitios oficiales. Sin pagos a través de NOIZE.';
+
+  @override
+  String get noizeDonationScreenTitle => 'Donación NOIZE';
+
+  @override
+  String get noizeDonationPurpose => 'Propósito: Impacto social';
+
+  @override
+  String get noizeDonationFlowDescription =>
+      'Descubre ONG abajo y continúa en el sitio web oficial de cada organización. NOIZE no procesa donaciones ni cobra comisión — solo credibilidad de marca.';
+
+  @override
+  String get ngoDiscoveryHeading => 'Descubrimiento de ONG';
+
+  @override
+  String get ngoVisitOfficialSite => 'Abrir sitio oficial';
+
+  @override
+  String get noizeDonationNoRevenueDisclaimer =>
+      'NOIZE no obtiene ingresos de esta sección. Verifica la URL antes de donar.';
+
+  @override
+  String get linkCouldNotOpen => 'No se pudo abrir el enlace';
+
+  @override
+  String get noizeDonationCta => 'Explorar ONG';
 }

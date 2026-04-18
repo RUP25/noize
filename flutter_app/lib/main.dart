@@ -7,8 +7,10 @@ import 'package:provider/provider.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
+import 'config/api_config.dart';
 import 'providers/language_provider.dart';
 import 'providers/player_state_provider.dart';
+import 'utils/toast_util.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +30,7 @@ void main() async {
   };
 
   try {
+    await initApiConfig();
     // Initialize auth service (loads stored token)
     await AuthService().init();
 
@@ -77,6 +80,7 @@ class NoizeApp extends StatelessWidget {
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, child) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'NOIZE.music',
           

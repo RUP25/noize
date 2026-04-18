@@ -228,7 +228,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get artist => 'कलाकार';
 
   @override
-  String get influencer => 'इन्फ्लुएंसर';
+  String get creator => 'क्रिएटर';
 
   @override
   String get browseAsGuest => 'अतिथि के रूप में ब्राउज़ करें';
@@ -499,15 +499,22 @@ class AppLocalizationsHi extends AppLocalizations {
       'सुनें और पुरस्कार कमाएं,\nKYC सत्यापन, रेफरल बोनस';
 
   @override
-  String get freeUserUpgradeReminderBannerHeader =>
-      'Want to earn while you listen?';
+  String get freeUserUpgradeReminderBannerHeader => 'NOIZE REP के लिए तैयार?';
 
   @override
   String get freeUserUpgradeReminderBannerBody =>
-      'Upgrade to NOIZE REP and start earning by supporting music you love.';
+      '₹399/माह · रेफ़रल, टास्क कमाई, टोकन डैशबोर्ड। रिवॉर्ड पूल से भुगतान (स्थिर नहीं)। NOIZE Listen के बाद अगला कदम।';
 
   @override
-  String get freeUserUpgradeReminderBannerCta => 'UPGRADE NOW';
+  String get freeUserUpgradeReminderBannerCta => 'REP में अपग्रेड';
+
+  @override
+  String get repSubscriptionPitchBody =>
+      'NOIZE Listen के बाद: वृद्धि + रेफ़रल। रेफ़रल सिस्टम, टास्क कमाई, टोकन डैशबोर्ड। दैनिक 50 · मासिक 800–1200। रिवॉर्ड पूल से कमाई, स्थिर नहीं।';
+
+  @override
+  String get noizeRepEngagementLabel =>
+      'एंगेजमेंट इंजन · नियंत्रित वृद्धि · टोकन सीमाएँ';
 
   @override
   String get premiumFeatureLockScreenHeader =>
@@ -538,15 +545,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get artistPromotionEngagementCta => 'SUPPORT & EARN';
 
   @override
-  String get listenerOnlySubscriptionPitchHeader =>
-      'Love listening? Listen more with NOIZE Listen.';
+  String get listenerOnlySubscriptionPitchHeader => 'NOIZE Listen — ₹149/माह';
 
   @override
   String get listenerOnlySubscriptionPitchBody =>
-      'Ad-free. Unlimited playlists. Offline downloads.';
+      'विज्ञापन-मुक्त, असीमित स्किप, ऑफ़लाइन डाउनलोड, पूरा कैटलॉग। मुख्य राजस्व योजना — आपकी स्ट्रीम कलाकारों को वितरण चलाती है।';
 
   @override
-  String get listenerOnlySubscriptionPitchCta => 'GO PREMIUM';
+  String get listenerOnlySubscriptionPitchCta => 'सदस्यता लें';
+
+  @override
+  String get noizeListenCoreRevenueLabel =>
+      'मुख्य सदस्यता · मुख्य राजस्व · स्ट्रीम से भुगतान';
 
   @override
   String get downgradeConfirmationHeader =>
@@ -613,7 +623,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get listenWithAds =>
-      '• विज्ञापनों के साथ सुनें और सीमित स्किप\n• निजी प्लेलिस्ट बनाएं (साझा नहीं कर सकते)\n• डाउनलोड या पुरस्कार नहीं कमा सकते';
+      '• सीमित स्ट्रीमिंग विज्ञापनों और सीमित स्किप के साथ\n• ऑफ़लाइन डाउनलोड नहीं\n• कोई टोकन, टिपिंग या मुद्रीकरण नहीं — NOIZE Listen पर पूर्ण पहुंच';
+
+  @override
+  String get guestSkipLimitReached =>
+      'स्किप सीमा पूरी। असीमित स्किप के लिए NOIZE Listen में अपग्रेड करें।';
+
+  @override
+  String get noizeGuestExperienceNoMonetisation =>
+      'टिकट, मर्च और टिपिंग NOIZE Listen के साथ उपलब्ध हैं।';
 
   @override
   String get loginRequiredToPlay => 'चलाने के लिए लॉगिन आवश्यक';
@@ -638,4 +656,37 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get deleteFailed => 'हटाने में विफल';
+
+  @override
+  String get noizeDonationCardTitle => 'NOIZE दान';
+
+  @override
+  String get noizeDonationCardSubtitle =>
+      'सामाजिक प्रभाव · NGO खोजें — आधिकारिक साइटों पर लिंक। NOIZE के ज़रिए कोई भुगतान नहीं।';
+
+  @override
+  String get noizeDonationScreenTitle => 'NOIZE दान';
+
+  @override
+  String get noizeDonationPurpose => 'उद्देश्य: सामाजिक प्रभाव';
+
+  @override
+  String get noizeDonationFlowDescription =>
+      'नीचे NGO देखें और प्रत्येक संगठन की आधिकारिक वेबसाइट पर जारी रखें। NOIZE दान संसाधित नहीं करता और कोई शुल्क नहीं लेता — केवल ब्रांड विश्वसनीयता।';
+
+  @override
+  String get ngoDiscoveryHeading => 'NGO खोज';
+
+  @override
+  String get ngoVisitOfficialSite => 'आधिकारिक साइट खोलें';
+
+  @override
+  String get noizeDonationNoRevenueDisclaimer =>
+      'NOIZE इस खंड से राजस्व नहीं कमाता। दान से पहले URL जाँच लें।';
+
+  @override
+  String get linkCouldNotOpen => 'लिंक नहीं खुल सका';
+
+  @override
+  String get noizeDonationCta => 'NGO देखें';
 }

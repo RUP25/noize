@@ -26,8 +26,15 @@ interface Message {
   data?: any
 }
 
+interface Artist {
+  id: string
+  channel_name: string | null
+  full_name: string | null
+}
+
 export default function ContentModeration() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedArtist, setSelectedArtist] = useState<string>('')
   const [showMessageModal, setShowMessageModal] = useState(false)
   const [showMessageCenter, setShowMessageCenter] = useState(false)
   const [selectedChannel, setSelectedChannel] = useState<{ id: string; name: string } | null>(null)
@@ -52,18 +59,41 @@ export default function ContentModeration() {
     }
   }, [showMessageCenter])
 
+  // Fetch artists for filter dropdown
+  const { data: artists = [] } = useQuery<Artist[]>({
+    queryKey: ['artists'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/admin/users', { params: { role: 'artist', limit: 1000 } })
+        return response.data.filter((user: any) => user.channel_name && user.is_artist)
+      } catch (error) {
+        console.error('Failed to fetch artists:', error)
+        return []
+      }
+    },
+  })
+
+  // Get selected artist name for filtering
+  const selectedArtistName = selectedArtist 
+    ? artists.find((a) => a.id === selectedArtist)?.channel_name || ''
+    : ''
+
   // Fetch all songs (or pending songs) for moderation - these can be suspended
   const { data: songs, isLoading, error } = useQuery<Song[]>({
-    queryKey: ['songs', 'all', searchQuery],
+    queryKey: ['songs', 'all', searchQuery, selectedArtistName],
     queryFn: async () => {
       const params: any = {}
-      if (searchQuery.trim()) {
+      // If artist is selected, use their channel name as search
+      if (selectedArtistName) {
+        params.search = selectedArtistName
+      } else if (searchQuery.trim()) {
         params.search = searchQuery.trim()
       }
       // Fetch all songs - admins can suspend any song from here
       const response = await api.get('/admin/content/songs/all', { params })
       return response.data
     },
+    enabled: !selectedArtist || !!selectedArtistName, // Wait for artist name to be available
     retry: 2,
     retryDelay: 1000,
   })
@@ -401,41 +431,99 @@ export default function ContentModeration() {
         </div>
         <div
           style={{
-            position: 'relative',
-            maxWidth: '500px',
+            display: 'flex',
+            gap: '16px',
+            flexWrap: 'wrap',
+            alignItems: 'center',
           }}
         >
-          <Search
-            size={20}
+          {/* Artist Filter */}
+          <div>
+            <label
+              style={{
+                color: '#a0aec0',
+                fontSize: '14px',
+                marginRight: '8px',
+                display: 'block',
+                marginBottom: '4px',
+              }}
+            >
+              Filter by Artist:
+            </label>
+            <select
+              value={selectedArtist}
+              onChange={(e) => {
+                setSelectedArtist(e.target.value)
+                setSearchQuery('') // Clear search when artist is selected
+              }}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#1a1f2e',
+                border: '1px solid #2d3748',
+                borderRadius: '8px',
+                color: '#e0e0e0',
+                fontSize: '14px',
+                cursor: 'pointer',
+                minWidth: '200px',
+              }}
+            >
+              <option value="">All Artists</option>
+              {artists.map((artist) => (
+                <option key={artist.id} value={artist.id}>
+                  {artist.channel_name || artist.full_name || 'Unknown'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Search Input */}
+          <div
             style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#a0aec0',
+              position: 'relative',
+              flex: 1,
+              minWidth: '300px',
             }}
-          />
-          <input
-            type="text"
-            placeholder="Search by title, album, or artist..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px 12px 40px',
-              backgroundColor: '#1a1f2e',
-              border: '1px solid #2d3748',
-              borderRadius: '8px',
-              color: '#e0e0e0',
-              fontSize: '14px',
-              outline: 'none',
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-              }
-            }}
-          />
+          >
+            <Search
+              size={20}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#a0aec0',
+              }}
+            />
+            <input
+              type="text"
+              placeholder={selectedArtist ? "Search by title or album..." : "Search by title, album, or artist..."}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                if (e.target.value.trim()) {
+                  setSelectedArtist('') // Clear artist filter when searching
+                }
+              }}
+              disabled={!!selectedArtist}
+              style={{
+                width: '100%',
+                padding: '12px 16px 12px 40px',
+                backgroundColor: '#1a1f2e',
+                border: '1px solid #2d3748',
+                borderRadius: '8px',
+                color: '#e0e0e0',
+                fontSize: '14px',
+                outline: 'none',
+                opacity: selectedArtist ? 0.5 : 1,
+                cursor: selectedArtist ? 'not-allowed' : 'text',
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
 

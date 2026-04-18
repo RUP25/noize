@@ -68,7 +68,12 @@ class MediaService {
       
       // Handle specific error codes
       if (resp.statusCode == 404) {
-        throw Exception('Channel "$channelName" not found. Make sure the channel exists.');
+        // Silently return empty list for 404s (expected when channel doesn't exist)
+        // Only log if it's not the default "popular" channel lookup
+        if (kDebugMode && channelName != 'popular') {
+          print('⚠️ Channel "$channelName" not found');
+        }
+        return []; // Return empty list instead of throwing for 404s
       }
       
       if (resp.statusCode == 401) {
@@ -141,12 +146,36 @@ class MediaService {
     throw Exception('Like failed: ${resp.statusCode}');
   }
 
-  Future<List<String>> searchArtist(String query) async {
+  Future<Map<String, dynamic>> dislikeSong(int songId) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(path: '${base.path}/artist/song/$songId/dislike');
+    final resp = await http.post(uri, headers: _auth.authHeader);
+    if (resp.statusCode == 200) return jsonDecode(resp.body);
+    throw Exception('Dislike failed: ${resp.statusCode}');
+  }
+
+  /// Streams (listens), likes, dislikes, subscribers for the signed-in artist.
+  Future<Map<String, dynamic>> getArtistEngagementStats() async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(path: '${base.path}/artist/me/stats');
+    final resp = await http.get(uri, headers: _auth.authHeader);
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body);
+      if (data is Map<String, dynamic>) return data;
+    }
+    throw Exception('Artist stats failed: ${resp.statusCode}');
+  }
+
+  Future<List<dynamic>> searchArtist(String query) async {
     final base = Uri.parse(apiBaseUrl);
     final uri = base.replace(path: '${base.path}/artist/search', queryParameters: {'q': query});
     final resp = await http.get(uri);
     if (resp.statusCode == 200) {
-      return List<String>.from(jsonDecode(resp.body));
+      final data = jsonDecode(resp.body);
+      if (data is List) {
+        return data;
+      }
+      return const [];
     }
     throw Exception('Search failed: ${resp.statusCode}');
   }
@@ -204,12 +233,13 @@ class MediaService {
     throw Exception('Failed to fetch playlist: ${resp.statusCode}');
   }
 
-  Future<Map<String, dynamic>> updatePlaylist(String playlistId, {String? name, bool? isPublic}) async {
+  Future<Map<String, dynamic>> updatePlaylist(String playlistId, {String? name, bool? isPublic, String? coverPhotoUrl}) async {
     final base = Uri.parse(apiBaseUrl);
     final uri = base.replace(path: '${base.path}/user/playlist/$playlistId');
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (isPublic != null) body['is_public'] = isPublic;
+    if (coverPhotoUrl != null) body['cover_photo_url'] = coverPhotoUrl;
     final resp = await http.put(
       uri,
       headers: {..._auth.authHeader, 'Content-Type': 'application/json'},
@@ -219,12 +249,67 @@ class MediaService {
     throw Exception('Failed to update playlist: ${resp.statusCode}');
   }
 
-  Future<Map<String, dynamic>> deletePlaylist(String playlistId) async {
+  Future<List<dynamic>> searchSongs(String query, {int limit = 50}) async {
     final base = Uri.parse(apiBaseUrl);
-    final uri = base.replace(path: '${base.path}/user/playlist/$playlistId');
-    final resp = await http.delete(uri, headers: _auth.authHeader);
+    final uri = base.replace(path: '${base.path}/user/songs/search', queryParameters: {'q': query, 'limit': limit.toString()});
+    final resp = await http.get(uri, headers: _auth.authHeader);
     if (resp.statusCode == 200) return jsonDecode(resp.body);
-    throw Exception('Failed to delete playlist: ${resp.statusCode}');
+    throw Exception('Failed to search songs: ${resp.statusCode}');
+  }
+
+  Future<Map<String, dynamic>> deletePlaylist(String playlistId) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      // Ensure proper path construction - handle both cases where base.path might be empty or have a value
+      final path = base.path.isEmpty 
+          ? '/user/playlist/$playlistId'
+          : '${base.path}/user/playlist/$playlistId';
+      final uri = base.replace(path: path);
+      
+      if (kDebugMode) {
+        print('🗑️ Deleting playlist: $uri');
+        print('📋 Playlist ID: $playlistId');
+      }
+      
+      final resp = await http.delete(uri, headers: _auth.authHeader).timeout(const Duration(seconds: 30));
+      
+      if (kDebugMode) {
+        print('📥 Delete response status: ${resp.statusCode}');
+        print('📥 Delete response body: ${resp.body}');
+      }
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+      
+      // Try to parse error message from response
+      String errorMessage = 'Failed to delete playlist';
+      try {
+        final errorBody = jsonDecode(resp.body);
+        if (errorBody is Map && errorBody.containsKey('detail')) {
+          errorMessage = errorBody['detail'].toString();
+        }
+      } catch (_) {
+        errorMessage = 'Failed to delete playlist: ${resp.statusCode}';
+      }
+      
+      throw Exception(errorMessage);
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ ClientException: $e');
+      }
+      throw Exception('Cannot connect to server at $apiBaseUrl. Make sure the backend is running.');
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('⏱️ TimeoutException: $e');
+      }
+      throw Exception('Request timed out. The server may be slow or unreachable. Try again later.');
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error deleting playlist: $e');
+      }
+      rethrow;
+    }
   }
 
   Future<List<int>> getLikedSongs() async {
@@ -246,5 +331,488 @@ class MediaService {
       return jsonDecode(resp.body);
     }
     throw Exception('Failed to fetch liked songs: ${resp.statusCode}');
+  }
+
+  Future<List<dynamic>> getFollowingArtists() async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(path: '${base.path}/user/following');
+    final resp = await http.get(uri, headers: _auth.authHeader);
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body);
+    }
+    if (resp.statusCode == 401) {
+      throw Exception('Authentication required. Please log in again.');
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getPopularArtists({int limit = 12}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/artist/popular',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri);
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body);
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getArtistMerchandise(String channelName) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/${Uri.encodeComponent(channelName)}/merchandise'
+          : '${base.path}/artist/${Uri.encodeComponent(channelName)}/merchandise';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+      if (resp.statusCode == 404) {
+        return []; // Return empty list if not found
+      }
+      throw Exception('Failed to fetch merchandise: ${resp.statusCode}');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching merchandise: $e');
+      }
+      return []; // Return empty list on error
+    }
+  }
+
+  Future<Map<String, dynamic>> createMerchandise(Map<String, dynamic> merchData) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/merchandise'
+          : '${base.path}/artist/merchandise';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.post(
+        uri,
+        headers: {..._auth.authHeader, 'Content-Type': 'application/json'},
+        body: jsonEncode(merchData),
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        return jsonDecode(resp.body);
+      }
+      throw Exception('Failed to create merchandise: ${resp.statusCode}');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error creating merchandise: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<dynamic>> getArtistEvents(String channelName) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/${Uri.encodeComponent(channelName)}/events'
+          : '${base.path}/artist/${Uri.encodeComponent(channelName)}/events';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+      if (resp.statusCode == 404) {
+        return []; // Return empty list if not found
+      }
+      throw Exception('Failed to fetch events: ${resp.statusCode}');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching events: $e');
+      }
+      return []; // Return empty list on error
+    }
+  }
+
+  Future<Map<String, dynamic>> createEvent(Map<String, dynamic> eventData) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/events'
+          : '${base.path}/artist/events';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.post(
+        uri,
+        headers: {..._auth.authHeader, 'Content-Type': 'application/json'},
+        body: jsonEncode(eventData),
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        return jsonDecode(resp.body);
+      }
+      throw Exception('Failed to create event: ${resp.statusCode}');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error creating event: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateMerchandise(int merchId, Map<String, dynamic> updateData) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/merchandise/$merchId'
+          : '${base.path}/artist/merchandise/$merchId';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.put(
+        uri,
+        headers: {
+          ..._auth.authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(updateData),
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+
+      // Try to surface backend validation error (e.g., 422)
+      try {
+        final body = jsonDecode(resp.body);
+        if (body is Map && body['detail'] != null) {
+          throw Exception('Failed to update merchandise: ${body['detail']}');
+        }
+      } catch (_) {
+        // ignore parse errors, fall back to status code message
+      }
+
+      throw Exception('Failed to update merchandise: ${resp.statusCode}');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating merchandise: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> deleteMerchandise(int merchId) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/merchandise/$merchId'
+          : '${base.path}/artist/merchandise/$merchId';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.delete(
+        uri,
+        headers: _auth.authHeader,
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode != 200) {
+        throw Exception('Failed to delete merchandise: ${resp.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deleting merchandise: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateEvent(int eventId, Map<String, dynamic> updateData) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/events/$eventId'
+          : '${base.path}/artist/events/$eventId';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.put(
+        uri,
+        headers: _auth.authHeader,
+        body: jsonEncode(updateData),
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+      throw Exception('Failed to update event: ${resp.statusCode}');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating event: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> deleteEvent(int eventId) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/events/$eventId'
+          : '${base.path}/artist/events/$eventId';
+      final uri = base.replace(path: path);
+      
+      final resp = await http.delete(
+        uri,
+        headers: _auth.authHeader,
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode != 200) {
+        throw Exception('Failed to delete event: ${resp.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deleting event: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateSong(int songId, {String? title, String? album, String? coverPhotoUrl, String? lyrics}) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/song/$songId'
+          : '${base.path}/artist/song/$songId';
+      final uri = base.replace(path: path);
+      
+      final body = <String, dynamic>{};
+      if (title != null) body['title'] = title;
+      if (album != null) body['album'] = album;
+      if (coverPhotoUrl != null) body['cover_photo_url'] = coverPhotoUrl;
+      // Include lyrics if provided (empty string is valid to clear lyrics)
+      if (lyrics != null) body['lyrics'] = lyrics;
+      
+      final resp = await http.put(
+        uri,
+        headers: {..._auth.authHeader, 'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+      
+      String errorMessage = 'Failed to update song';
+      try {
+        final errorBody = jsonDecode(resp.body);
+        if (errorBody is Map && errorBody.containsKey('detail')) {
+          errorMessage = errorBody['detail'].toString();
+        }
+      } catch (_) {
+        errorMessage = 'Failed to update song: ${resp.statusCode}';
+      }
+      
+      throw Exception(errorMessage);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating song: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteSong(int songId) async {
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty 
+          ? '/artist/song/$songId'
+          : '${base.path}/artist/song/$songId';
+      final uri = base.replace(path: path);
+      
+      if (kDebugMode) {
+        print('🗑️ Deleting song: $uri');
+        print('🎵 Song ID: $songId');
+      }
+      
+      final resp = await http.delete(uri, headers: _auth.authHeader).timeout(const Duration(seconds: 30));
+      
+      if (kDebugMode) {
+        print('📥 Delete response status: ${resp.statusCode}');
+        print('📥 Delete response body: ${resp.body}');
+      }
+      
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body);
+      }
+      
+      String errorMessage = 'Failed to delete song';
+      try {
+        final errorBody = jsonDecode(resp.body);
+        if (errorBody is Map && errorBody.containsKey('detail')) {
+          errorMessage = errorBody['detail'].toString();
+        }
+      } catch (_) {
+        errorMessage = 'Failed to delete song: ${resp.statusCode}';
+      }
+      
+      throw Exception(errorMessage);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deleting song: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Personalized home rail (likes, plays, playlists, collaborative + trending fill).
+  Future<List<dynamic>> getForYouRecommendations({int limit = 40}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/recommendations/for-you',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri, headers: _auth.authHeader).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    if (resp.statusCode == 401) {
+      return [];
+    }
+    throw Exception('Failed to load recommendations: ${resp.statusCode}');
+  }
+
+  /// Chart rails (Top 50, etc.) — same ranking as trending, keyed by catalog `chart_id`.
+  /// [style]: `trending_only` | `balanced` | `new_music_heavy`
+  Future<List<dynamic>> getChartTopSongs({
+    required String chartId,
+    int limit = 50,
+    String style = 'balanced',
+  }) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/charts/top',
+      queryParameters: {
+        'chart_id': chartId,
+        'limit': limit.toString(),
+        'style': style,
+      },
+    );
+    final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    throw Exception('Failed to load chart: ${resp.statusCode}');
+  }
+
+  Future<List<dynamic>> getTrendingRecommendations({int limit = 30}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/recommendations/trending',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getSimilarSongs(int songId, {int limit = 20}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final path = base.path.isEmpty
+        ? '/recommendations/similar/$songId'
+        : '${base.path}/recommendations/similar/$songId';
+    final uri = base.replace(path: path, queryParameters: {'limit': limit.toString()});
+    final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getMoodForYou({int limit = 30}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/recommendations/mood-for-you',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri, headers: _auth.authHeader).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    if (resp.statusCode == 401) return [];
+    throw Exception('Failed to load mood feed: ${resp.statusCode}');
+  }
+
+  Future<List<dynamic>> getExperienceNewReleases({int limit = 24}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/experience/new-releases',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getExperienceTrending({int limit = 20}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/experience/trending',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  /// Public feed: next upcoming events platform-wide (default 10).
+  Future<List<dynamic>> getExperienceEvents({String? locationHint, int limit = 10}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final q = <String, String>{'limit': limit.toString()};
+    if (locationHint != null && locationHint.isNotEmpty) {
+      q['location_hint'] = locationHint;
+    }
+    final uri = base.replace(path: '${base.path}/experience/events', queryParameters: q);
+    final resp = await http.get(uri).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getExperienceMerchFollowed({int limit = 16}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(
+      path: '${base.path}/experience/merch/followed',
+      queryParameters: {'limit': limit.toString()},
+    );
+    final resp = await http.get(uri, headers: _auth.authHeader).timeout(const Duration(seconds: 30));
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as List<dynamic>;
+    }
+    if (resp.statusCode == 401) return [];
+    return [];
+  }
+
+  /// Call after ~30s of playback to fuel trending and personalization.
+  Future<void> recordListen(int songId, {int? listenMs}) async {
+    if (!_auth.isLoggedIn) return;
+    try {
+      final base = Uri.parse(apiBaseUrl);
+      final path = base.path.isEmpty ? '/recommendations/play' : '${base.path}/recommendations/play';
+      final uri = base.replace(path: path);
+      final body = <String, dynamic>{'song_id': songId};
+      if (listenMs != null) body['listen_ms'] = listenMs;
+      await http
+          .post(
+            uri,
+            headers: {..._auth.authHeader, 'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 8));
+    } catch (_) {}
   }
 }

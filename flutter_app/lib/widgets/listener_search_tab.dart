@@ -14,7 +14,7 @@ class _ListenerSearchTabState extends State<ListenerSearchTab> {
   final _search = TextEditingController();
   final _media = MediaService();
   bool _loading = false;
-  List<String> _results = [];
+  List<dynamic> _results = [];
 
   @override
   void dispose() {
@@ -77,9 +77,29 @@ class _ListenerSearchTabState extends State<ListenerSearchTab> {
               shrinkWrap: true,
               itemCount: _results.length,
               itemBuilder: (_, i) {
-                final name = _results[i];
+                final item = _results[i];
+                String name;
+                String? photoUrl;
+                if (item is String) {
+                  name = item;
+                } else if (item is Map<String, dynamic>) {
+                  name = item['channel_name']?.toString() ??
+                      item['name']?.toString() ??
+                      'Unknown';
+                  photoUrl = item['photo_url']?.toString();
+                } else {
+                  name = item.toString();
+                }
                 return ListTile(
-                  leading: const Icon(Icons.account_circle, color: Color(0xFF78E08F)),
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF78E08F),
+                    backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                        ? NetworkImage(photoUrl)
+                        : null,
+                    child: (photoUrl == null || photoUrl.isEmpty)
+                        ? const Icon(Icons.account_circle, color: Colors.black)
+                        : null,
+                  ),
                   title: Text(name, style: const TextStyle(color: Colors.white)),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () => Navigator.push(

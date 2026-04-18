@@ -35,11 +35,23 @@ dependencies:
 
   # --- URL launcher for opening links, email, phone ---
   url_launcher: ^6.3.1
+  
+  # --- Image picker and sharing ---
+  image_picker: ^1.1.2
+  share_plus: ^10.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/logo.png
+  # Avoid transparent iOS icons (App Store requirement when alpha is present)
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true

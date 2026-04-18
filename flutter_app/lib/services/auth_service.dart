@@ -5,6 +5,18 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 
+/// Builds an absolute path under the API base (avoids `//` when the base URL has a trailing slash).
+String _apiPath(String relative) {
+  final base = Uri.parse(apiBaseUrl);
+  var p = base.path;
+  if (p.endsWith('/')) {
+    p = p.substring(0, p.length - 1);
+  }
+  final r = relative.startsWith('/') ? relative.substring(1) : relative;
+  if (p.isEmpty) return '/$r';
+  return '$p/$r';
+}
+
 class AuthService {
   AuthService._internal();
   static final AuthService _instance = AuthService._internal();
@@ -29,8 +41,7 @@ class AuthService {
   Future<Map<String, dynamic>> requestOtp(String contact) async {
     if (contact.trim().isEmpty) throw AuthException('Contact cannot be empty');
 
-    final base = Uri.parse(apiBaseUrl);
-    final uri = base.replace(path: '${base.path}/auth/otp/request');
+    final uri = Uri.parse(apiBaseUrl).replace(path: _apiPath('auth/otp/request'));
     try {
       final resp = await http
           .post(
@@ -39,10 +50,11 @@ class AuthService {
             body: jsonEncode({'contact': contact.trim()}),
           )
           .timeout(
-            const Duration(seconds: 10),
+            const Duration(seconds: 30),
             onTimeout: () {
               throw Exception(
-                  'OTP request timeout. Check if backend is running at $apiBaseUrl');
+                  'OTP request timeout. No response from $apiBaseUrl. '
+                  'For local development use a debug build with the backend running; test/release builds must use your deployed API URL.');
             },
           );
 
@@ -66,14 +78,21 @@ class AuthService {
     if (contact.trim().isEmpty) throw AuthException('Contact cannot be empty');
     if (otp.trim().isEmpty) throw AuthException('OTP cannot be empty');
 
-    final base = Uri.parse(apiBaseUrl);
-    final uri = base.replace(path: '${base.path}/auth/otp/verify');
+    final uri = Uri.parse(apiBaseUrl).replace(path: _apiPath('auth/otp/verify'));
     try {
-      final resp = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'contact': contact.trim(), 'otp': otp.trim()}),
-      );
+      final resp = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'contact': contact.trim(), 'otp': otp.trim()}),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception(
+                  'OTP verify timeout. No response from $apiBaseUrl.');
+            },
+          );
 
       if (resp.statusCode == 200) {
         final Map<String, dynamic> j = jsonDecode(resp.body);
@@ -136,6 +155,31 @@ class AuthService {
         } catch (_) {}
         throw AuthException(msg, statusCode: resp.statusCode);
       }
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw AuthException('Network error: $e');
+    }
+  }
+
+  /// NOIZE Artist+ — channel monetisation (₹299 standard / ₹599 pro per month, prototype).
+  Future<Map<String, dynamic>> upgradeArtistPlus({required String tier, bool kycVerified = false}) async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(path: '${base.path}/user/artist-plus');
+    try {
+      final resp = await http.post(
+        uri,
+        headers: {...authHeader, 'Content-Type': 'application/json'},
+        body: jsonEncode({'tier': tier, 'kyc_verified': kycVerified}),
+      );
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body) as Map<String, dynamic>;
+      }
+      var msg = 'Artist+ upgrade failed (${resp.statusCode})';
+      try {
+        final parsed = jsonDecode(resp.body);
+        msg += ': ${parsed['detail'] ?? parsed}';
+      } catch (_) {}
+      throw AuthException(msg, statusCode: resp.statusCode);
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('Network error: $e');
@@ -365,6 +409,7 @@ class AuthService {
     Map<String, dynamic>? privacySettings,
     String? language,
     String? location,
+    Map<String, dynamic>? experiencePreferences,
   }) async {
     final base = Uri.parse(apiBaseUrl);
     final uri = base.replace(path: '${base.path}/user/settings');
@@ -374,6 +419,7 @@ class AuthService {
       if (privacySettings != null) body['privacy_settings'] = privacySettings;
       if (language != null) body['language'] = language;
       if (location != null) body['location'] = location;
+      if (experiencePreferences != null) body['experience_preferences'] = experiencePreferences;
       
       final resp = await http.put(
         uri,
@@ -399,6 +445,26 @@ class AuthService {
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('Network error: $e');
+    }
+  }
+
+  /// Public UI config (admin-editable): story title + greeting strings.
+  Future<Map<String, dynamic>?> getUiConfig() async {
+    final base = Uri.parse(apiBaseUrl);
+    final uri = base.replace(path: '${base.path}/config/ui');
+    try {
+      final resp = await http.get(uri).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Request timeout. Check if backend is running at $apiBaseUrl');
+        },
+      );
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 

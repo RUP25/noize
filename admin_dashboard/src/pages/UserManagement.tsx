@@ -146,7 +146,7 @@ export default function UserManagement() {
           <option value="listen">Listen</option>
           <option value="rep">REP</option>
           <option value="artist">Artist</option>
-          <option value="influencer">Influencer</option>
+          <option value="influencer">Creator</option>
         </select>
       </div>
 

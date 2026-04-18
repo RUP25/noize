@@ -1,4 +1,4 @@
-// lib/screens/influencer_signup_screen.dart
+// lib/screens/creator_signup_screen.dart
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../utils/toast_util.dart';
@@ -6,20 +6,20 @@ import '../config/api_config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class InfluencerSignupScreen extends StatefulWidget {
-  const InfluencerSignupScreen({super.key});
+class CreatorSignupScreen extends StatefulWidget {
+  const CreatorSignupScreen({super.key});
 
   @override
-  State<InfluencerSignupScreen> createState() => _InfluencerSignupScreenState();
+  State<CreatorSignupScreen> createState() => _CreatorSignupScreenState();
 }
 
-class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
+class _CreatorSignupScreenState extends State<CreatorSignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
   final _socialHandleController = TextEditingController();
   final _auth = AuthService();
   bool _loading = false;
-  
+
   String? _selectedSocialPlatform;
   final List<String> _platforms = ['Instagram', 'YouTube', 'TikTok', 'Twitter/X', 'Other'];
 
@@ -39,9 +39,8 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
 
     setState(() => _loading = true);
     try {
-      // Call backend to create influencer profile
-      await _createInfluencerProfile();
-      showToast('Influencer profile created successfully!');
+      await _createCreatorProfile();
+      showToast('Creator profile created successfully!');
       if (mounted) {
         Navigator.pop(context, true);
       }
@@ -52,7 +51,8 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
     }
   }
 
-  Future<void> _createInfluencerProfile() async {
+  /// Backend role remains `influencer` for API compatibility; product name is Creator.
+  Future<void> _createCreatorProfile() async {
     final base = Uri.parse(apiBaseUrl);
     final uri = base.replace(path: '${base.path}/user/upgrade');
     final resp = await http.post(
@@ -66,7 +66,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
         'social_handle': _socialHandleController.text.trim(),
       }),
     );
-    
+
     if (resp.statusCode != 200) {
       throw Exception('Failed to create profile');
     }
@@ -75,11 +75,11 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF78E08F);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFF111414),
       appBar: AppBar(
-        title: const Text('Create Influencer Profile'),
+        title: const Text('Become a Creator'),
         backgroundColor: Colors.transparent,
       ),
       body: SafeArea(
@@ -91,7 +91,6 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -106,10 +105,10 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.person_outline, size: 48, color: accent),
+                        Icon(Icons.auto_awesome, size: 48, color: accent),
                         const SizedBox(height: 12),
                         const Text(
-                          'NOIZE Influencer',
+                          'NOIZE Creator',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -118,7 +117,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Curate playlists, share music, earn rewards',
+                          'Build playlists, promote music like an influencer, and earn rewards',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -129,10 +128,8 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Profile Fields
                   Text(
-                    'Display Name',
+                    'Display name',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -156,7 +153,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: accent, width: 2),
+                        borderSide: const BorderSide(color: accent, width: 2),
                       ),
                     ),
                     validator: (value) {
@@ -167,9 +164,8 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  
                   Text(
-                    'Social Platform',
+                    'Primary social platform',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -192,7 +188,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: accent, width: 2),
+                        borderSide: const BorderSide(color: accent, width: 2),
                       ),
                     ),
                     dropdownColor: Colors.grey.shade900,
@@ -207,9 +203,8 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                     validator: (value) => value == null ? 'Please select a platform' : null,
                   ),
                   const SizedBox(height: 24),
-                  
                   Text(
-                    'Social Handle',
+                    'Social handle',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -233,7 +228,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: accent, width: 2),
+                        borderSide: const BorderSide(color: accent, width: 2),
                       ),
                     ),
                     validator: (value) {
@@ -244,8 +239,6 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Info Box
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -261,7 +254,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                             Icon(Icons.info_outline, color: accent, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'KYC Verification',
+                              'KYC verification',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -272,7 +265,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Full KYC verification required for Influencers.\nYou will need to provide:\n• Government ID\n• Live selfie',
+                          'Full KYC is required for paid creator payouts.\nYou will need:\n• Government ID\n• Live selfie',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade300,
@@ -282,8 +275,6 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Submit Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -306,7 +297,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                               ),
                             )
                           : const Text(
-                              'Create Profile',
+                              'Create profile',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -317,7 +308,7 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
                   const SizedBox(height: 16),
                   Center(
                     child: Text(
-                      'Demo Mode - No real verification required',
+                      'Demo mode — no real verification required',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade500,
@@ -334,6 +325,3 @@ class _InfluencerSignupScreenState extends State<InfluencerSignupScreen> {
     );
   }
 }
-
-
-

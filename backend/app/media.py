@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from .auth_integration import get_current_user
+from .auth_integration import get_current_user, get_current_user_optional
 from .models import User, Song
 from .db import get_db
 from .cdn_config import (
@@ -205,7 +205,7 @@ async def _generate_hls_from_audio(key: str) -> Optional[str]:
 async def download(
     key: str, 
     format: Optional[str] = Query(None, description="Format: 'hls' for HLS streaming, default is direct file"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     """

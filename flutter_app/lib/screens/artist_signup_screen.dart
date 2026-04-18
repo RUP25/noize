@@ -276,7 +276,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Upload music, build your fanbase, earn from your art',
+                          'Free tier: upload music, channel profile, basic stats. Upgrade to Artist+ (₹299–₹599/mo) for tipping, merch, campaigns & events.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,

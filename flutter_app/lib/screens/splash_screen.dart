@@ -6,7 +6,7 @@ import '../services/auth_service.dart';
 import 'listener_home_screen.dart';
 import 'listener_onboarding_screen.dart';
 import 'artist_home_screen.dart';
-import 'influencer_home_screen.dart';
+import 'creator_home_screen.dart';
 import 'dart:async';
 
 class SplashAndRouter extends StatefulWidget {
@@ -54,7 +54,7 @@ class _SplashAndRouterState extends State<SplashAndRouter> {
           } else if (userRole == 'artist') {
             return const ArtistHomeScreen();
           } else if (userRole == 'influencer') {
-            return const InfluencerHomeScreen();
+            return const CreatorHomeScreen();
           } else {
             // Default to listener home
             return const ListenerHomeScreen();

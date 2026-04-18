@@ -8,7 +8,8 @@ from typing import Optional, Tuple
 import json
 
 # Redis connection settings
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+# Default 127.0.0.1 for local `uvicorn` on the host. Docker Compose sets REDIS_HOST=redis for the backend service.
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
@@ -177,6 +178,21 @@ async def cache_delete(key: str) -> bool:
     """
     r = await get_redis()
     return bool(await r.delete(key))
+
+
+async def cache_delete_matching(prefix: str) -> int:
+    """
+    Delete all keys that start with `prefix` (SCAN + DELETE).
+    Used to invalidate per-user recommendation caches without a fixed key set.
+    """
+    r = await get_redis()
+    n = 0
+    try:
+        async for key in r.scan_iter(match=f"{prefix}*"):
+            n += int(await r.delete(key))
+    except Exception as e:
+        print(f"Redis cache_delete_matching error: {e}")
+    return n
 
 
 # Session/Token Management

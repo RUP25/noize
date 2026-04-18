@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import secrets
 from typing import Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from .db import get_db
 from .models import User
 from .schemas import EmailPasswordLogin, EmailPasswordSignup
@@ -18,9 +18,18 @@ _OTPS: Dict[str, str] = {}
 class OTPRequest(BaseModel):
     contact: str
 
+    @validator("contact")
+    def strip_contact(cls, v: str) -> str:
+        return v.strip()
+
+
 class OTPVerify(BaseModel):
     contact: str
     otp: str
+
+    @validator("contact", "otp")
+    def strip_fields(cls, v: str) -> str:
+        return v.strip()
 
 @router.post("/otp/request")
 async def request_otp(req: OTPRequest, request: Request):

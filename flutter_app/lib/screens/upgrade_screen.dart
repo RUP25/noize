@@ -5,7 +5,7 @@ import '../utils/toast_util.dart';
 import '../l10n/app_localizations.dart';
 
 class UpgradeScreen extends StatefulWidget {
-  final String planType; // 'listen' or 'rep'
+  final String planType; // 'listen', 'rep', or 'influencer' (Creator)
   
   const UpgradeScreen({super.key, required this.planType});
 
@@ -18,31 +18,47 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   bool _processing = false;
   String _selectedPaymentMethod = 'demo_card';
   
-  // Demo prices
+  /// Amounts are in **paise** (1 INR = 100 paise). Display: `(amount / 100)` as rupees.
   final _planData = {
     'listen': {
       'name': 'NOIZE Listen',
-      'monthly': 999,
-      'yearly': 9999,
+      // Core revenue tier: ₹149/mo — ad-free, full access; streams drive revenue distribution.
+      'monthly': 14900, // ₹149
+      'yearly': 149900, // ₹1499/yr (vs ₹1788 if 12× monthly)
       'features': [
-        'Ad-free streaming',
+        'Ad-free listening',
         'Unlimited skips',
         'Offline downloads',
-        'Playlist sharing',
-        'Premium audio quality',
+        'Full catalog access',
+        'Your plays power stream revenue distribution to artists',
       ],
     },
     'rep': {
       'name': 'NOIZE REP',
-      'monthly': 1499,
-      'yearly': 14999,
+      // Engagement engine after Listen: ₹399/mo — growth, referrals, token economy (capped).
+      'monthly': 39900, // ₹399
+      'yearly': 399900, // ₹3999/yr
       'features': [
         'Everything in NOIZE Listen',
-        'Listen & Earn rewards',
-        'KYC verification',
-        'Referral bonuses',
-        'Priority support',
-        'Exclusive events access',
+        'Referral system (growth + rewards)',
+        'Task-based earning',
+        'Token dashboard',
+        'Token limits: 50/day · 800–1200/month',
+        'Earnings from reward pool (not fixed)',
+        'KYC for payouts',
+      ],
+    },
+    'influencer': {
+      'name': 'NOIZE Creator',
+      'monthly': 129900, // ₹1299
+      'yearly': 1299900, // ₹12999
+      'features': [
+        'Everything in NOIZE Listen',
+        'Creator toolkit & promo tools',
+        'Playlist-led music influencer features',
+        'KYC for payouts',
+        'Revenue share & tips',
+        'Charts & trend insights',
       ],
     },
   };
@@ -64,7 +80,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       
       if (mounted) {
         if (result['ok'] == true && result['is_upgraded'] == true) {
-          showToast('Upgrade successful! Welcome to ${_planData[widget.planType]!['name']}!');
+          final planName = (_planData[widget.planType] ?? _planData['listen']!)['name'];
+          showToast('Upgrade successful! Welcome to $planName!');
           Navigator.pop(context, true);
         } else {
           final msg = result['msg'] ?? 'Upgrade failed. Please try again.';
@@ -81,20 +98,26 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF78E08F);
-    final plan = _planData[widget.planType]!;
+    final plan = _planData[widget.planType] ?? _planData['listen']!;
     final l10n = AppLocalizations.of(context);
     final pitch = widget.planType == 'rep'
-        ? (l10n?.freeUserUpgradeReminderBannerBody ??
-            'Upgrade to NOIZE REP and start earning by supporting music you love.')
+        ? (l10n?.repSubscriptionPitchBody ??
+            'The phase after NOIZE Listen: growth + referrals. Task earning, token dashboard, reward-pool payouts.')
+        : widget.planType == 'influencer'
+            ? 'Grow as a music influencer: playlists, promo links, and creator tools on NOIZE.'
         : (l10n?.listenerOnlySubscriptionPitchBody ??
             'Ad-free. Unlimited playlists. Offline downloads.');
-    final price = _selectedPeriod == 'monthly' ? plan['monthly'] : plan['yearly'];
+    final pricePaise = (_selectedPeriod == 'monthly' ? plan['monthly'] : plan['yearly']) as int;
     String? savings;
     if (_selectedPeriod == 'yearly') {
-      final monthlyPrice = (plan['monthly'] as int) * 12;
-      final yearlyPrice = plan['yearly'] as int;
-      final savePercent = ((monthlyPrice - yearlyPrice) / 100).toStringAsFixed(0);
-      savings = 'Save $savePercent%';
+      final monthlyPaise = plan['monthly'] as int;
+      final yearlyPaise = plan['yearly'] as int;
+      final annualIfMonthly = monthlyPaise * 12;
+      if (annualIfMonthly > yearlyPaise) {
+        final savePercent =
+            (((annualIfMonthly - yearlyPaise) / annualIfMonthly) * 100).round();
+        savings = 'Save about $savePercent% vs paying monthly';
+      }
     }
 
     return Scaffold(
@@ -141,6 +164,32 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey.shade400),
                       ),
+                      if (widget.planType == 'listen') ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          l10n?.noizeListenCoreRevenueLabel ??
+                              'Core subscription · Main revenue tier · Streams fund payouts',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: accent.withOpacity(0.95),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      if (widget.planType == 'rep') ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          l10n?.noizeRepEngagementLabel ??
+                              'Engagement engine · Controlled growth · Token caps apply',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: accent.withOpacity(0.95),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       // Price Toggle
                       Container(
@@ -162,7 +211,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '₹${((price as int) / 100).toStringAsFixed(0)}',
+                            '₹${(pricePaise / 100.0).toStringAsFixed(pricePaise % 100 == 0 ? 0 : 2)}',
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,

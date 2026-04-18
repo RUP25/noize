@@ -1,14 +1,14 @@
 # backend/app/admin.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, delete
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import datetime, timedelta
 from .db import get_db
-from .models import User, Song, Playlist, Like, Follow
+from .models import User, Song, Playlist, Like, Follow, Merchandise, Event
 from .auth_integration import get_current_user
-from .schemas import UserOut, SongOut
+from .schemas import UserOut, SongOut, MerchandiseCreate, MerchandiseOut, EventCreate, EventOut
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -274,8 +274,8 @@ async def delete_song(
     # Store artist channel name before deletion for cache invalidation
     artist_channel_name = song.artist.channel_name if song.artist else None
     
-    # Delete the song (cascade will handle related records like likes, playlist_songs)
-    await db.delete(song)
+    # Delete the song using execute with delete statement (cascade will handle related records like likes, playlist_songs)
+    await db.execute(delete(Song).where(Song.id == song_id))
     await db.commit()
     
     # Invalidate cache for this artist's channel
@@ -445,3 +445,253 @@ async def get_user_growth(
     
     growth = result.all()
     return [{"date": str(row.date), "count": row.count} for row in growth]
+
+
+# ==================== Merchandise Management ====================
+
+@router.post("/merchandise", response_model=MerchandiseOut)
+async def create_merchandise(
+    merch: MerchandiseCreate,
+    artist_id: Optional[str] = Query(None, description="Artist ID or channel name"),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Create a new merchandise item for an artist."""
+    # Find artist by ID or channel name
+    if artist_id:
+        # Try UUID first
+        try:
+            import uuid as uuid_lib
+            artist_uuid = uuid_lib.UUID(artist_id)
+            q = await db.execute(select(User).where(User.id == artist_uuid))
+            artist = q.scalars().first()
+        except ValueError:
+            # If not UUID, try channel name
+            q = await db.execute(select(User).where(User.channel_name == artist_id))
+            artist = q.scalars().first()
+    else:
+        raise HTTPException(status_code=400, detail="artist_id or channel_name required")
+    
+    if not artist:
+        raise HTTPException(status_code=404, detail="Artist not found")
+    
+    if not artist.is_artist:
+        raise HTTPException(status_code=400, detail="User is not an artist")
+    
+    # Create merchandise item
+    merchandise = Merchandise(
+        title=merch.title,
+        description=merch.description,
+        price=merch.price,
+        image_url=merch.image_url,
+        purchase_link=merch.purchase_link,
+        category=merch.category,
+        stock=merch.stock,
+        artist_id=artist.id
+    )
+    
+    db.add(merchandise)
+    await db.commit()
+    await db.refresh(merchandise)
+    
+    # Publish notification for new merchandise
+    try:
+        from .notifications import send_artist_notification
+        from datetime import datetime
+        await send_artist_notification(
+            artist.channel_name,
+            "new_merchandise",
+            f"New merchandise item: {merchandise.title}",
+            {
+                "merchandise_id": merchandise.id,
+                "title": merchandise.title,
+                "price": float(merchandise.price),
+                "image_url": merchandise.image_url,
+                "artist_id": str(artist.id),
+                "channel_name": artist.channel_name
+            }
+        )
+    except Exception as e:
+        # Don't fail the request if notification fails
+        print(f"Failed to send merchandise notification: {e}")
+    
+    return merchandise
+
+
+@router.get("/merchandise", response_model=List[MerchandiseOut])
+async def get_all_merchandise(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    artist_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all merchandise items, optionally filtered by artist."""
+    query = select(Merchandise)
+    
+    if artist_id:
+        try:
+            import uuid as uuid_lib
+            artist_uuid = uuid_lib.UUID(artist_id)
+            query = query.where(Merchandise.artist_id == artist_uuid)
+        except ValueError:
+            # Try channel name
+            q = await db.execute(select(User).where(User.channel_name == artist_id))
+            artist = q.scalars().first()
+            if artist:
+                query = query.where(Merchandise.artist_id == artist.id)
+            else:
+                return []
+    
+    query = query.order_by(Merchandise.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(query)
+    items = result.scalars().all()
+    return items
+
+
+@router.delete("/merchandise/{merch_id}")
+async def delete_merchandise(
+    merch_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Delete a merchandise item."""
+    result = await db.execute(select(Merchandise).where(Merchandise.id == merch_id))
+    merch = result.scalars().first()
+    
+    if not merch:
+        raise HTTPException(status_code=404, detail="Merchandise not found")
+    
+    await db.execute(delete(Merchandise).where(Merchandise.id == merch_id))
+    await db.commit()
+    
+    return {"ok": True, "merch_id": merch_id, "deleted": True}
+
+
+# ==================== Event Management ====================
+
+@router.post("/events", response_model=EventOut)
+async def create_event(
+    event: EventCreate,
+    artist_id: Optional[str] = Query(None, description="Artist ID or channel name"),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Create a new event for an artist."""
+    # Find artist by ID or channel name
+    if artist_id:
+        try:
+            import uuid as uuid_lib
+            artist_uuid = uuid_lib.UUID(artist_id)
+            q = await db.execute(select(User).where(User.id == artist_uuid))
+            artist = q.scalars().first()
+        except ValueError:
+            # If not UUID, try channel name
+            q = await db.execute(select(User).where(User.channel_name == artist_id))
+            artist = q.scalars().first()
+    else:
+        raise HTTPException(status_code=400, detail="artist_id or channel_name required")
+    
+    if not artist:
+        raise HTTPException(status_code=404, detail="Artist not found")
+    
+    if not artist.is_artist:
+        raise HTTPException(status_code=400, detail="User is not an artist")
+    
+    # Convert time string to Time object
+    from datetime import time as time_class
+    time_parts = event.time.split(':')
+    event_time = time_class(int(time_parts[0]), int(time_parts[1]) if len(time_parts) > 1 else 0)
+    
+    # Create event
+    new_event = Event(
+        title=event.title,
+        description=event.description,
+        date=event.date,
+        time=event_time,
+        location=event.location,
+        ticket_price=event.ticket_price,
+        ticket_link=getattr(event, "ticket_link", None),
+        artist_id=artist.id
+    )
+    
+    db.add(new_event)
+    await db.commit()
+    await db.refresh(new_event)
+    
+    # Publish notification for new event
+    try:
+        from .notifications import send_artist_notification
+        from datetime import datetime
+        await send_artist_notification(
+            artist.channel_name,
+            "new_event",
+            f"New event: {new_event.title}",
+            {
+                "event_id": new_event.id,
+                "title": new_event.title,
+                "date": new_event.date.isoformat() if new_event.date else None,
+                "time": new_event.time.strftime("%H:%M") if new_event.time else None,
+                "location": new_event.location,
+                "ticket_price": float(new_event.ticket_price) if new_event.ticket_price else None,
+                "ticket_link": getattr(new_event, "ticket_link", None),
+                "artist_id": str(artist.id),
+                "channel_name": artist.channel_name
+            }
+        )
+    except Exception as e:
+        # Don't fail the request if notification fails
+        print(f"Failed to send event notification: {e}")
+    
+    return new_event
+
+
+@router.get("/events", response_model=List[EventOut])
+async def get_all_events(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    artist_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all events, optionally filtered by artist."""
+    query = select(Event)
+    
+    if artist_id:
+        try:
+            import uuid as uuid_lib
+            artist_uuid = uuid_lib.UUID(artist_id)
+            query = query.where(Event.artist_id == artist_uuid)
+        except ValueError:
+            # Try channel name
+            q = await db.execute(select(User).where(User.channel_name == artist_id))
+            artist = q.scalars().first()
+            if artist:
+                query = query.where(Event.artist_id == artist.id)
+            else:
+                return []
+    
+    query = query.order_by(Event.date.asc(), Event.time.asc()).offset(skip).limit(limit)
+    result = await db.execute(query)
+    events = result.scalars().all()
+    return events
+
+
+@router.delete("/events/{event_id}")
+async def delete_event(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Delete an event."""
+    result = await db.execute(select(Event).where(Event.id == event_id))
+    event = result.scalars().first()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    from sqlalchemy import delete
+    await db.execute(delete(Event).where(Event.id == event_id))
+    await db.commit()
+    
+    return {"ok": True, "event_id": event_id, "deleted": True}
