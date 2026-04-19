@@ -9,9 +9,11 @@ const String _prefsApiOverride = 'api_base_url_override';
 /// Runtime URL set from the Login screen — **debug builds only** (LAN / emulator).
 String? _runtimeOverride;
 
-/// HTTPS origin of the deployed API (no trailing slash), e.g. `https://api.noize.app`.
-/// Used for **release and profile** builds when [String.fromEnvironment] `API_BASE_URL` is not set.
-/// Set this before distributing test APKs/IPAs, or pass `--dart-define=API_BASE_URL=...` when building.
+/// Public API base URL for **release and profile** builds when `--dart-define=API_BASE_URL=...` is not set.
+/// For an internet-facing prototype MVP: deploy the FastAPI backend (HTTPS recommended), then either:
+/// - set this constant to your origin, e.g. `https://noize-api.onrender.com`, or
+/// - build with `flutter build apk --dart-define=API_BASE_URL=https://your-api.example.com`
+/// (no trailing slash).
 const String kProductionApiBaseUrl = '';
 
 /// Call once at startup (e.g. from [main]) before any HTTP calls.

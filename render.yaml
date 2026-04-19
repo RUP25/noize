@@ -1,0 +1,54 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Deploy: Dashboard → New → Blueprint → connect this Git repo → apply this file.
+# Set secret values when prompted (DATABASE_URL, JWT_SECRET, R2_*, etc.).
+#
+# After deploy, copy the *.onrender.com URL into Flutter:
+#   flutter build apk --dart-define=API_BASE_URL=https://YOUR-SERVICE.onrender.com
+# Or set kProductionApiBaseUrl in flutter_app/lib/config/api_config.dart
+
+services:
+  - type: web
+    name: noize-api
+    runtime: docker
+    region: oregon
+    plan: free
+    # Monorepo: build only from backend/; Dockerfile paths are relative to this directory.
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    # Autodeploy when backend code changes (paths are always relative to repo root).
+    buildFilter:
+      paths:
+        - backend/**
+
+    envVars:
+      # Required for a working API (set in the Render dashboard when Blueprint prompts you).
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+      # Optional: Redis (OTP rate limits, caching). Omit to use in-memory fallbacks in the app.
+      - key: REDIS_HOST
+        sync: false
+
+      # Cloudflare R2 + CDN (uploads / media). Omit only if you are not using presigned uploads yet.
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_ACCESS_KEY
+        sync: false
+      - key: R2_SECRET_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: CDN_DOMAIN
+        sync: false
+      - key: CDN_ENABLED
+        sync: false
+      - key: R2_PUBLIC_DOMAIN
+        sync: false
+
+      - key: DEMO_PAYMENT_ENABLED
+        value: "true"

@@ -43,8 +43,9 @@ class _LoginScreenState extends State<LoginScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Debug builds only. Point to your machine\'s LAN IP (same Wi‑Fi), e.g. http://192.168.1.10:8000, '
-                'with the API on 0.0.0.0:8000. Release/test builds use the deployed API from the app config.',
+                'Debug builds only. Use your LAN IP for local dev (e.g. http://192.168.1.10:8000), or your '
+                'deployed API (e.g. https://your-service.onrender.com). Release/profile builds use '
+                'kProductionApiBaseUrl or --dart-define=API_BASE_URL=...',
                 style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
               const SizedBox(height: 12),

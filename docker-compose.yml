@@ -34,6 +34,8 @@ services:
     build: ./backend
     env_file:
       - ./backend/.env.example
+    # Dev-only reload; production image CMD has no --reload (see backend/Dockerfile).
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       REDIS_HOST: redis
     depends_on:

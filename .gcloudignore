@@ -1,0 +1,12 @@
+# Speed up `gcloud builds submit` by not uploading these paths.
+.git
+flutter_app/
+admin_dashboard/
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+*.md
+.env
+**/.env

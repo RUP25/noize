@@ -1,0 +1,51 @@
+# Google Cloud Build: build Docker image → Artifact Registry → Cloud Run.
+#
+# One-time (replace PROJECT, REGION, REPO as needed):
+#   gcloud config set project PROJECT_ID
+#   gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+#   gcloud artifacts repositories create REPO --repository-format=docker --location=REGION
+#
+# Deploy:
+#   gcloud builds submit --config cloudbuild.yaml .
+#
+# After deploy, set secrets in Cloud Run (console or gcloud), e.g. DATABASE_URL, R2_*, JWT_SECRET, REDIS_HOST.
+# Flutter: --dart-define=API_BASE_URL=https://SERVICE-URL.run.app
+
+substitutions:
+  _SERVICE_NAME: noize-api
+  _REGION: us-central1
+  _AR_LOCATION: us-central1
+  _AR_REPO: noize
+
+steps:
+  - id: build-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_AR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE_NAME}:latest
+      - ./backend
+
+  - id: push-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE_NAME}:latest
+
+  - id: deploy-cloud-run
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --quiet
+      - --image=${_AR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE_NAME}:latest
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      # Cloud Run injects PORT=8080; Dockerfile already uses $PORT.
+      - --port=8080
+
+options:
+  logging: CLOUD_LOGGING_ONLY
